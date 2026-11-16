@@ -29,7 +29,7 @@ class UserCreate(BaseModel):
     email : str
 
 #테이블 없을 때 생성해주는 함수
-Base.metadata.create.all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 #요청 받아 세션을 열고 끝나면 닫는 함수
 def get_db():
@@ -43,11 +43,10 @@ def get_db():
 # primary_key 적으면 자동으로 인덱스 설정됨.
 # index = true 를 적어주면 빠르게 찾아주는 것임.
 
-#포스트 요청
+#포스트 요청 (=회원가입) CRUD 중 Create
 @app.post("/users")
 def create_user(user: UserCreate,db: Session = Depends(get_db)):
     new_user = User(username = user.username, email = user.email)
-#프론트에서 user.username하고 user.email을 받으면 username과email을 가진 nrw_user라는 객체가 생김
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -57,8 +56,36 @@ def create_user(user: UserCreate,db: Session = Depends(get_db)):
         "username": new_user.username,
         "email": new_user.email
     }
+#프론트에서 user.username하고 user.email을 받으면 username과email을 가진 nrw_user라는 객체가 생김
+
+# 가입한 정보 불러오기(전체 조회)
+@app.get("/users")
+def read_users(db: Session=Depends(get_db)):
+    users = db.query(User).all()
+    return[
+        {"id": user.id, 
+         "username":user.username, 
+         "email":user.email
+        } for user in users
+    ]
+#/users 경로로 가면 가입, 조회가 됨.
+
+# 가입한 정보 불러오기(특정 조회)
+@app.get("/users/{user_id}")
+def read_user(user_id:int, db: Session=Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        return HTTPException(status_code=404, detail="there is no such name.")
+    return {
+        "id": user.id,
+        "username" : user.username,
+        "email" : user.email,
+    }
+    #퍼스트는 찾은 것 중에 가장 첫번째꺼 인덱스 0번을 가져와라 이뜻임.
+
 @app.get("/")
 def read_home():
     return{
         "hello": "world"
     }
+# 그냥 / 이 경로로 가면 헬로월드 나옴.
