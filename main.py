@@ -86,7 +86,7 @@ def read_user(user_id:int, db: Session=Depends(get_db)):
 # 회원정보 업데이트하기  CRUD 중 Update
 @app.put("/users/{user_id}")
 def update_user(user_id:int, data:UserCreate, db: Session=Depends(get_db)):
-    db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         return HTTPException(status_code=404, detail="there is no such name.")
 
