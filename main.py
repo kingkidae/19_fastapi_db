@@ -58,7 +58,7 @@ def create_user(user: UserCreate,db: Session = Depends(get_db)):
     }
 #프론트에서 user.username하고 user.email을 받으면 username과email을 가진 nrw_user라는 객체가 생김
 
-# 가입한 정보 불러오기(전체 조회)
+# 가입한 정보 불러오기(전체 조회) CRUD 중 Read
 @app.get("/users")
 def read_users(db: Session=Depends(get_db)):
     users = db.query(User).all()
@@ -70,7 +70,7 @@ def read_users(db: Session=Depends(get_db)):
     ]
 #/users 경로로 가면 가입, 조회가 됨.
 
-# 가입한 정보 불러오기(특정 조회)
+# 가입한 정보 불러오기(특정 조회) CRUD 중 Read
 @app.get("/users/{user_id}")
 def read_user(user_id:int, db: Session=Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -82,6 +82,23 @@ def read_user(user_id:int, db: Session=Depends(get_db)):
         "email" : user.email,
     }
     #퍼스트는 찾은 것 중에 가장 첫번째꺼 인덱스 0번을 가져와라 이뜻임.
+
+# 회원정보 업데이트하기  CRUD 중 Update
+@app.put("/users/{user_id}")
+def update_user(user_id:int, data:UserCreate, db: Session=Depends(get_db)):
+    db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        return HTTPException(status_code=404, detail="there is no such name.")
+
+    user.username = data.username
+    user.email = data.email
+    db.commit() #db를 확정하는 코드
+    db.refresh(user)
+    return{
+        "id" : user.id,
+        "username": user.username,
+        "email" : user.email,
+    }
 
 @app.get("/")
 def read_home():
