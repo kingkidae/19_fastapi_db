@@ -6,9 +6,9 @@
 # 설치
 
 from fastapi import FastAPI, Depends,HTTPException
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String # sqlalchemy는 db를 다루는 라이브러리로 유효성을 검사함.
 from sqlalchemy.orm import declarative_base, Session
-from pydantic import BaseModel #사용 전에 유용한지 아닌지 여부 확인하는 프로그램
+from pydantic import BaseModel #사용 전에 유용한지 아닌지 여부 확인하는 라이브러리
 app = FastAPI()
 
 DATABASE_URL = "postgresql://postgres.idncnltjwdlhkffcdmnv:nqnCMEkscYd8cyLC@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
@@ -18,12 +18,11 @@ engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
 #table model 생성 (table name: users) 클래스는 객체를 만들어주는 명령어임.
-class User(Base):
+class User(Base): #테이블을 정의함. 슈파베이스 들어가보면 users라는 테이블이 있음.
     __tablename__ = "users"
     id = Column(Integer, primary_key = True, index = True)
     username = Column(String(50), unique = True, index = True)
     email = Column(String(120))
-
 class UserCreate(BaseModel):
     username : str
     email : str
@@ -76,6 +75,7 @@ def read_user(user_id:int, db: Session=Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         return HTTPException(status_code=404, detail="there is no such name.")
+    # 유저가 없는 경우에 사용자가 없다는 데이터를 보내줌. 반드시 들어가야 함.
     return {
         "id": user.id,
         "username" : user.username,
@@ -99,6 +99,20 @@ def update_user(user_id:int, data:UserCreate, db: Session=Depends(get_db)):
         "username": user.username,
         "email" : user.email,
     }
+
+
+# 회원정보 삭제 CRUD 중 Delete
+@app.delete("/users/{user_id}")
+def delete_user(user_id:int, db: Session=Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    # db에서 하나의 행을 가져와서 user라는 객체로 만들어줌.
+    if user is None:
+        return HTTPException(status_code=404, detail="there's no such name.")
+    db.delete(user)
+    db.commit()
+    return {"message": "delete completed."}
+
+
 
 @app.get("/")
 def read_home():
